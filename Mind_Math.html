@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neural Flash</title>
+    <style>
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #090d18;
+            color: #dce8f0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+        }
+
+        /* Subtle grid lines in the background */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(0, 210, 255, 0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 210, 255, 0.04) 1px, transparent 1px);
+            background-size: 52px 52px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .page-shell {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 540px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 44px 24px 48px;
+        }
+
+        /* Brand label */
+        .wordmark {
+            font-size: 11px;
+            letter-spacing: 7px;
+            text-transform: uppercase;
+            color: #00ccf5;
+            opacity: 0.65;
+            margin-bottom: 36px;
+            align-self: flex-start;
+        }
+
+        /* Operation selector nav */
+        nav {
+            width: 100%;
+            margin-bottom: 56px;
+        }
+
+        nav ul {
+            list-style: none;
+            display: flex;
+            gap: 5px;
+            background: #0e1625;
+            padding: 5px;
+            border-radius: 13px;
+            border: 1px solid #172030;
+        }
+
+        nav ul li {
+            flex: 1;
+        }
+
+        nav ul li a {
+            display: block;
+            text-align: center;
+            padding: 11px 6px;
+            border-radius: 9px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            letter-spacing: 1.5px;
+            color: #3d5570;
+            text-decoration: none;
+            transition: color 0.2s, background 0.2s;
+            border: 1px solid transparent;
+        }
+
+        nav ul li a:hover {
+            color: #8aaabb;
+            background: #131f30;
+        }
+
+        nav ul li a.active {
+            background: rgba(0, 204, 245, 0.1);
+            color: #00ccf5;
+            border-color: rgba(0, 204, 245, 0.22);
+        }
+
+        /* Main equation display */
+        .display-zone {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            gap: 0;
+            margin-bottom: 44px;
+        }
+
+        .display-card {
+            width: 100%;
+            background: #0e1625;
+            border: 1px solid #172030;
+            border-radius: 20px;
+            padding: 52px 32px 44px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Top-edge glow line on the card */
+        .display-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 15%;
+            right: 15%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(0, 204, 245, 0.5), transparent);
+        }
+
+        /* Corner decoration dots */
+        .display-card::before {
+            content: '';
+            position: absolute;
+            top: 14px;
+            right: 16px;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: rgba(0, 204, 245, 0.3);
+            box-shadow: -12px 0 0 rgba(0, 204, 245, 0.15);
+        }
+
+        h1#displayNumbers {
+            position: static;
+            transform: none;
+            left: auto;
+            top: auto;
+            font-family: 'Courier New', monospace;
+            font-size: clamp(42px, 11vw, 76px);
+            font-weight: 700;
+            letter-spacing: 5px;
+            color: #f0f4fa;
+            text-shadow: 0 0 48px rgba(0, 204, 245, 0.18);
+            margin-bottom: 22px;
+            line-height: 1.1;
+        }
+
+        h2#answer {
+            position: static;
+            transform: none;
+            left: auto;
+            top: auto;
+            font-family: 'Courier New', monospace;
+            font-size: clamp(18px, 5vw, 26px);
+            font-weight: 400;
+            color: #00ccf5;
+            letter-spacing: 3px;
+            text-shadow: 0 0 24px rgba(0, 204, 245, 0.55);
+            min-height: 1.6em;
+            line-height: 1.6;
+        }
+
+        /* GO button */
+        .action-button {
+            position: static;
+            bottom: auto;
+            left: auto;
+            transform: none;
+            display: block;
+            width: 74px;
+            height: 74px;
+            border-radius: 50%;
+            background: transparent;
+            border: 2px solid #00ccf5;
+            color: #00ccf5;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            letter-spacing: 2.5px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
+            box-shadow: 0 0 18px rgba(0, 204, 245, 0.18), inset 0 0 14px rgba(0, 204, 245, 0.06);
+        }
+
+        .action-button:hover {
+            background: rgba(0, 204, 245, 0.12);
+            box-shadow: 0 0 32px rgba(0, 204, 245, 0.38), inset 0 0 14px rgba(0, 204, 245, 0.1);
+            transform: scale(1.07);
+        }
+
+        .action-button:active {
+            transform: scale(0.94);
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 480px) {
+            .page-shell {
+                padding: 32px 16px 40px;
+            }
+            nav ul {
+                flex-wrap: wrap;
+            }
+            nav ul li {
+                flex: 1 1 45%;
+            }
+            h1#displayNumbers {
+                font-size: 36px;
+            }
+            h2#answer {
+                font-size: 18px;
+            }
+            .action-button {
+                width: 64px;
+                height: 64px;
+                font-size: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page-shell">
+
+        <div class="wordmark">Neural Flash</div>
+
+        <nav>
+            <ul>
+                <li><a href="#" id="additionLink" class="active">+ ADD</a></li>
+                <li><a href="#" id="subtractionLink">− SUB</a></li>
+                <li><a href="#" id="multiplicationLink">× MUL</a></li>
+                <li><a href="#" id="divisionLink">÷ DIV</a></li>
+            </ul>
+        </nav>
+
+        <div class="display-zone">
+            <div class="display-card">
+                <h1 id="displayNumbers">0 + 0</h1>
+                <h2 id="answer">ans: 0</h2>
+            </div>
+        </div>
+
+        <button id="actionButton" class="action-button">GO</button>
+
+    </div>
+
+    <script>
+        let num1 = 0;
+        let num2 = 0;
+        let show = true;
+        let functionality = true; // True - Generate, False - Toggle Result
+        let currentPage = 'addition';
+
+        const randomNumInRange = (min, max) => {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        };
+
+        const handleClick = () => {
+            if (functionality) {
+                // Generate Functionality
+                num1 = randomNumInRange(50, 100);
+                num2 = randomNumInRange(1, 50);
+                show = false;
+            } else {
+                // Toggle Sum, Difference, Product, or Quotient
+                show = !show;
+            }
+            updateDisplay();
+            functionality = !functionality;
+        };
+
+        const updateDisplay = () => {
+            if (currentPage === 'addition') {
+                document.getElementById('displayNumbers').innerText = `${num1} + ${num2}`;
+                document.getElementById('answer').innerText = show ? `ans: ${num1 + num2}` : '';
+            } else if (currentPage === 'subtraction') {
+                document.getElementById('displayNumbers').innerText = `${num1} - ${num2}`;
+                document.getElementById('answer').innerText = show ? `ans: ${num1 - num2}` : '';
+            } else if (currentPage === 'multiplication') {
+                document.getElementById('displayNumbers').innerText = `${num1} * ${num2}`;
+                document.getElementById('answer').innerText = show ? `ans: ${num1 * num2}` : '';
+            } else if (currentPage === 'division') {
+                document.getElementById('displayNumbers').innerText = `${num1} ÷ ${num2}`;
+                document.getElementById('answer').innerText = show ? `ans: ${(num1 / num2).toFixed(2)}` : '';
+            }
+        };
+
+        document.getElementById('additionLink').addEventListener('click', () => {
+            currentPage = 'addition';
+            setActivePage('addition');
+            updateDisplay();
+        });
+
+        document.getElementById('subtractionLink').addEventListener('click', () => {
+            currentPage = 'subtraction';
+            setActivePage('subtraction');
+            updateDisplay();
+        });
+
+        document.getElementById('multiplicationLink').addEventListener('click', () => {
+            currentPage = 'multiplication';
+            setActivePage('multiplication');
+            updateDisplay();
+        });
+
+        document.getElementById('divisionLink').addEventListener('click', () => {
+            currentPage = 'division';
+            setActivePage('division');
+            updateDisplay();
+        });
+
+        const setActivePage = (page) => {
+            document.querySelectorAll('nav ul li a').forEach(link => {
+                link.classList.remove('active');
+            });
+            document.getElementById(`${page}Link`).classList.add('active');
+        };
+
+        document.getElementById('actionButton').addEventListener('click', handleClick);
+
+        updateDisplay();
+    </script>
+</body>
+</html>
