@@ -2,341 +2,695 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Neural Flash</title>
     <style>
-        *, *::before, *::after {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        /* ─── Reset ─── */
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        /* ─── Tokens ─── */
+        :root {
+            --bg:          #090d18;
+            --surface:     #0e1625;
+            --border:      #172030;
+            --cyan:        #00ccf5;
+            --cyan-dim:    rgba(0, 204, 245, 0.12);
+            --cyan-glow:   rgba(0, 204, 245, 0.35);
+            --green:       #00e676;
+            --green-dim:   rgba(0, 230, 118, 0.12);
+            --green-glow:  rgba(0, 230, 118, 0.4);
+            --red:         #ff3d57;
+            --red-dim:     rgba(255, 61, 87, 0.12);
+            --red-glow:    rgba(255, 61, 87, 0.4);
+            --text:        #f0f4fa;
+            --text-mid:    #8aaabb;
+            --text-dim:    #3d5570;
+            --radius-card: 20px;
+            --radius-pill: 13px;
         }
 
+        /* ─── Base ─── */
         body {
             font-family: 'Courier New', Courier, monospace;
-            background-color: #090d18;
-            color: #dce8f0;
+            background: var(--bg);
+            color: var(--text);
             min-height: 100vh;
+            min-height: 100dvh;
             display: flex;
             flex-direction: column;
             align-items: center;
             overflow-x: hidden;
         }
 
-        /* Subtle grid lines in the background */
+        /* Grid overlay */
         body::before {
             content: '';
             position: fixed;
             inset: 0;
             background-image:
-                linear-gradient(rgba(0, 210, 255, 0.04) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 210, 255, 0.04) 1px, transparent 1px);
+                linear-gradient(rgba(0,210,255,0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,210,255,0.04) 1px, transparent 1px);
             background-size: 52px 52px;
             pointer-events: none;
             z-index: 0;
         }
 
+        /* ─── Shell ─── */
         .page-shell {
             position: relative;
             z-index: 1;
             width: 100%;
-            max-width: 540px;
+            max-width: 520px;
             min-height: 100vh;
+            min-height: 100dvh;
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 44px 24px 48px;
+            padding: 36px 20px calc(32px + env(safe-area-inset-bottom));
+            gap: 0;
         }
 
-        /* Brand label */
+        /* ─── Wordmark ─── */
         .wordmark {
-            font-size: 11px;
+            font-size: 10px;
             letter-spacing: 7px;
             text-transform: uppercase;
-            color: #00ccf5;
-            opacity: 0.65;
-            margin-bottom: 36px;
+            color: var(--cyan);
+            opacity: 0.55;
+            margin-bottom: 20px;
             align-self: flex-start;
         }
 
-        /* Operation selector nav */
-        nav {
+        /* ─── Stats bar ─── */
+        .stats-bar {
             width: 100%;
-            margin-bottom: 56px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+            padding: 10px 16px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-pill);
         }
+
+        .streak-display {
+            font-size: 13px;
+            letter-spacing: 1px;
+            color: var(--text-mid);
+            transition: color 0.3s;
+        }
+
+        .streak-display.hot {
+            color: #ffb300;
+            text-shadow: 0 0 12px rgba(255, 179, 0, 0.6);
+        }
+
+        .score-display {
+            font-size: 12px;
+            letter-spacing: 1px;
+            color: var(--text-dim);
+        }
+
+        /* ─── Difficulty selector ─── */
+        .diff-selector {
+            width: 100%;
+            display: flex;
+            gap: 5px;
+            background: var(--surface);
+            padding: 5px;
+            border-radius: var(--radius-pill);
+            border: 1px solid var(--border);
+            margin-bottom: 12px;
+        }
+
+        .diff-btn {
+            flex: 1;
+            padding: 9px 4px;
+            border: 1px solid transparent;
+            border-radius: 9px;
+            background: transparent;
+            color: var(--text-dim);
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: color 0.2s, background 0.2s;
+            min-height: 40px;
+        }
+
+        .diff-btn:hover { color: var(--text-mid); background: #131f30; }
+        .diff-btn.active {
+            background: var(--cyan-dim);
+            color: var(--cyan);
+            border-color: rgba(0,204,245,0.22);
+        }
+
+        /* ─── Operation nav ─── */
+        nav { width: 100%; margin-bottom: 20px; }
 
         nav ul {
             list-style: none;
             display: flex;
             gap: 5px;
-            background: #0e1625;
+            background: var(--surface);
             padding: 5px;
-            border-radius: 13px;
-            border: 1px solid #172030;
+            border-radius: var(--radius-pill);
+            border: 1px solid var(--border);
         }
 
-        nav ul li {
-            flex: 1;
-        }
+        nav ul li { flex: 1; }
 
         nav ul li a {
-            display: block;
-            text-align: center;
-            padding: 11px 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 44px;
+            padding: 8px 4px;
             border-radius: 9px;
             font-family: 'Courier New', monospace;
             font-size: 12px;
-            letter-spacing: 1.5px;
-            color: #3d5570;
+            letter-spacing: 1px;
+            color: var(--text-dim);
             text-decoration: none;
             transition: color 0.2s, background 0.2s;
             border: 1px solid transparent;
+            cursor: pointer;
         }
 
-        nav ul li a:hover {
-            color: #8aaabb;
-            background: #131f30;
-        }
-
+        nav ul li a:hover { color: var(--text-mid); background: #131f30; }
         nav ul li a.active {
-            background: rgba(0, 204, 245, 0.1);
-            color: #00ccf5;
-            border-color: rgba(0, 204, 245, 0.22);
+            background: var(--cyan-dim);
+            color: var(--cyan);
+            border-color: rgba(0,204,245,0.22);
         }
 
-        /* Main equation display */
+        /* ─── Display card ─── */
         .display-zone {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
             width: 100%;
-            gap: 0;
-            margin-bottom: 44px;
+            margin-bottom: 16px;
         }
 
         .display-card {
             width: 100%;
-            background: #0e1625;
-            border: 1px solid #172030;
-            border-radius: 20px;
-            padding: 52px 32px 44px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-card);
+            padding: 44px 28px 36px;
             text-align: center;
             position: relative;
             overflow: hidden;
+            transition: border-color 0.25s, box-shadow 0.25s;
         }
 
-        /* Top-edge glow line on the card */
+        /* Top edge glow */
         .display-card::after {
             content: '';
             position: absolute;
-            top: 0;
-            left: 15%;
-            right: 15%;
+            top: 0; left: 15%; right: 15%;
             height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(0, 204, 245, 0.5), transparent);
+            background: linear-gradient(90deg, transparent, rgba(0,204,245,0.45), transparent);
+            transition: background 0.25s;
         }
 
-        /* Corner decoration dots */
+        /* Corner dots */
         .display-card::before {
             content: '';
             position: absolute;
-            top: 14px;
-            right: 16px;
-            width: 6px;
-            height: 6px;
+            top: 14px; right: 16px;
+            width: 6px; height: 6px;
             border-radius: 50%;
-            background: rgba(0, 204, 245, 0.3);
-            box-shadow: -12px 0 0 rgba(0, 204, 245, 0.15);
+            background: rgba(0,204,245,0.25);
+            box-shadow: -12px 0 0 rgba(0,204,245,0.12);
         }
 
-        h1#displayNumbers {
-            position: static;
-            transform: none;
-            left: auto;
-            top: auto;
-            font-family: 'Courier New', monospace;
-            font-size: clamp(42px, 11vw, 76px);
+        /* Card feedback states */
+        .display-card.correct {
+            border-color: var(--green);
+            box-shadow: 0 0 28px var(--green-glow);
+        }
+        .display-card.correct::after {
+            background: linear-gradient(90deg, transparent, rgba(0,230,118,0.6), transparent);
+        }
+
+        .display-card.wrong {
+            border-color: var(--red);
+            box-shadow: 0 0 28px var(--red-glow);
+            animation: shake 0.35s ease;
+        }
+        .display-card.wrong::after {
+            background: linear-gradient(90deg, transparent, rgba(255,61,87,0.6), transparent);
+        }
+
+        @keyframes shake {
+            0%   { transform: translateX(0);    }
+            20%  { transform: translateX(-7px); }
+            40%  { transform: translateX(7px);  }
+            60%  { transform: translateX(-5px); }
+            80%  { transform: translateX(5px);  }
+            100% { transform: translateX(0);    }
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0.9); opacity: 0; }
+            to   { transform: scale(1);   opacity: 1; }
+        }
+
+        .equation {
+            font-size: clamp(38px, 10vw, 68px);
             font-weight: 700;
-            letter-spacing: 5px;
-            color: #f0f4fa;
-            text-shadow: 0 0 48px rgba(0, 204, 245, 0.18);
-            margin-bottom: 22px;
+            letter-spacing: 4px;
+            color: var(--text);
+            text-shadow: 0 0 40px rgba(0,204,245,0.15);
+            margin-bottom: 16px;
             line-height: 1.1;
+            min-height: 1.2em;
+            transition: opacity 0.2s;
         }
 
-        h2#answer {
-            position: static;
-            transform: none;
-            left: auto;
-            top: auto;
-            font-family: 'Courier New', monospace;
-            font-size: clamp(18px, 5vw, 26px);
-            font-weight: 400;
-            color: #00ccf5;
-            letter-spacing: 3px;
-            text-shadow: 0 0 24px rgba(0, 204, 245, 0.55);
+        .equation.idle { opacity: 0.2; }
+
+        /* Feedback message below equation */
+        .feedback-msg {
+            font-size: clamp(14px, 4vw, 18px);
+            letter-spacing: 2px;
             min-height: 1.6em;
             line-height: 1.6;
+            transition: color 0.2s;
         }
 
-        /* GO button */
+        .feedback-msg.correct { color: var(--green); text-shadow: 0 0 16px var(--green-glow); }
+        .feedback-msg.wrong   { color: var(--red);   text-shadow: 0 0 16px var(--red-glow);   }
+        .feedback-msg.hint    { color: var(--text-mid); }
+
+        /* ─── Answer input area ─── */
+        .input-zone {
+            width: 100%;
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(6px);
+            transition: opacity 0.2s, transform 0.2s;
+        }
+
+        .input-zone.visible {
+            opacity: 1;
+            pointer-events: all;
+            transform: translateY(0);
+        }
+
+        #answerInput {
+            flex: 1;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text);
+            font-family: 'Courier New', monospace;
+            font-size: 20px;          /* 20px prevents iOS auto-zoom */
+            letter-spacing: 3px;
+            text-align: center;
+            padding: 14px 16px;
+            min-height: 56px;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            /* Remove number spinners */
+            -moz-appearance: textfield;
+        }
+        #answerInput::-webkit-outer-spin-button,
+        #answerInput::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+        #answerInput:focus {
+            border-color: var(--cyan);
+            box-shadow: 0 0 16px var(--cyan-dim);
+        }
+
+        #answerInput::placeholder { color: var(--text-dim); letter-spacing: 1px; font-size: 14px; }
+
+        #checkButton {
+            background: transparent;
+            border: 1px solid var(--cyan);
+            border-radius: 12px;
+            color: var(--cyan);
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            letter-spacing: 2.5px;
+            padding: 14px 20px;
+            min-height: 56px;
+            min-width: 80px;
+            cursor: pointer;
+            transition: background 0.2s, box-shadow 0.2s, transform 0.12s;
+            box-shadow: 0 0 12px rgba(0,204,245,0.1);
+        }
+
+        #checkButton:hover {
+            background: var(--cyan-dim);
+            box-shadow: 0 0 20px var(--cyan-glow);
+        }
+
+        #checkButton:active { transform: scale(0.95); }
+
+        /* ─── Action button (NEW / NEXT) ─── */
         .action-button {
-            position: static;
-            bottom: auto;
-            left: auto;
-            transform: none;
-            display: block;
-            width: 74px;
-            height: 74px;
+            width: 72px;
+            height: 72px;
             border-radius: 50%;
             background: transparent;
-            border: 2px solid #00ccf5;
-            color: #00ccf5;
+            border: 2px solid var(--cyan);
+            color: var(--cyan);
             font-family: 'Courier New', monospace;
-            font-size: 11px;
-            letter-spacing: 2.5px;
+            font-size: 10px;
+            letter-spacing: 2px;
             text-transform: uppercase;
             cursor: pointer;
-            transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
-            box-shadow: 0 0 18px rgba(0, 204, 245, 0.18), inset 0 0 14px rgba(0, 204, 245, 0.06);
+            transition: background 0.2s, box-shadow 0.2s, transform 0.15s, border-color 0.2s, color 0.2s;
+            box-shadow: 0 0 16px rgba(0,204,245,0.15), inset 0 0 12px rgba(0,204,245,0.04);
+            flex-shrink: 0;
         }
 
         .action-button:hover {
-            background: rgba(0, 204, 245, 0.12);
-            box-shadow: 0 0 32px rgba(0, 204, 245, 0.38), inset 0 0 14px rgba(0, 204, 245, 0.1);
+            background: var(--cyan-dim);
+            box-shadow: 0 0 28px var(--cyan-glow);
             transform: scale(1.07);
         }
 
-        .action-button:active {
-            transform: scale(0.94);
+        .action-button:active { transform: scale(0.94); }
+
+        .action-button.ready {
+            border-color: var(--green);
+            color: var(--green);
+            box-shadow: 0 0 16px var(--green-glow), inset 0 0 12px rgba(0,230,118,0.04);
+        }
+        .action-button.ready:hover {
+            background: var(--green-dim);
+            box-shadow: 0 0 28px var(--green-glow);
         }
 
-        /* ── Responsive ── */
-        @media (max-width: 480px) {
-            .page-shell {
-                padding: 32px 16px 40px;
-            }
-            nav ul {
-                flex-wrap: wrap;
-            }
-            nav ul li {
-                flex: 1 1 45%;
-            }
-            h1#displayNumbers {
-                font-size: 36px;
-            }
-            h2#answer {
-                font-size: 18px;
-            }
-            .action-button {
-                width: 64px;
-                height: 64px;
-                font-size: 10px;
-            }
+        /* ─── Responsive ─── */
+        @media (max-width: 400px) {
+            .page-shell { padding: 24px 14px calc(24px + env(safe-area-inset-bottom)); }
+            .diff-btn   { font-size: 10px; letter-spacing: 1px; }
+            nav ul li a { font-size: 11px; }
+            .equation   { font-size: 34px; letter-spacing: 2px; }
+        }
+
+        /* Prevent layout jump when keyboard opens on mobile */
+        @supports (height: 100dvh) {
+            .page-shell { min-height: 100dvh; }
         }
     </style>
 </head>
 <body>
-    <div class="page-shell">
+<div class="page-shell">
 
-        <div class="wordmark">Neural Flash</div>
+    <div class="wordmark">Neural Flash</div>
 
-        <nav>
-            <ul>
-                <li><a href="#" id="additionLink" class="active">+ ADD</a></li>
-                <li><a href="#" id="subtractionLink">− SUB</a></li>
-                <li><a href="#" id="multiplicationLink">× MUL</a></li>
-                <li><a href="#" id="divisionLink">÷ DIV</a></li>
-            </ul>
-        </nav>
-
-        <div class="display-zone">
-            <div class="display-card">
-                <h1 id="displayNumbers">0 + 0</h1>
-                <h2 id="answer">ans: 0</h2>
-            </div>
-        </div>
-
-        <button id="actionButton" class="action-button">GO</button>
-
+    <!-- Live stats -->
+    <div class="stats-bar">
+        <span class="streak-display" id="streakDisplay">🔥 0 streak</span>
+        <span class="score-display"  id="scoreDisplay">0 / 0</span>
     </div>
 
-    <script>
-        let num1 = 0;
-        let num2 = 0;
-        let show = true;
-        let functionality = true; // True - Generate, False - Toggle Result
-        let currentPage = 'addition';
+    <!-- Difficulty -->
+    <div class="diff-selector" id="diffSelector">
+        <button class="diff-btn active" data-diff="easy">EASY</button>
+        <button class="diff-btn"        data-diff="medium">MED</button>
+        <button class="diff-btn"        data-diff="hard">HARD</button>
+    </div>
 
-        const randomNumInRange = (min, max) => {
-            return Math.floor(Math.random() * (max - min + 1)) + min;
-        };
+    <!-- Operation selector -->
+    <nav>
+        <ul>
+            <li><a href="javascript:void(0)" id="additionLink"       class="active">+ ADD</a></li>
+            <li><a href="javascript:void(0)" id="subtractionLink"              >− SUB</a></li>
+            <li><a href="javascript:void(0)" id="multiplicationLink"           >× MUL</a></li>
+            <li><a href="javascript:void(0)" id="divisionLink"                 >÷ DIV</a></li>
+        </ul>
+    </nav>
 
-        const handleClick = () => {
-            if (functionality) {
-                // Generate Functionality
-                num1 = randomNumInRange(50, 100);
-                num2 = randomNumInRange(1, 50);
-                show = false;
-            } else {
-                // Toggle Sum, Difference, Product, or Quotient
-                show = !show;
+    <!-- Equation display -->
+    <div class="display-zone">
+        <div class="display-card" id="displayCard">
+            <div class="equation idle" id="displayNumbers">? ○ ?</div>
+            <div class="feedback-msg hint" id="feedbackMsg">press NEW to start</div>
+        </div>
+    </div>
+
+    <!-- Answer input -->
+    <div class="input-zone" id="inputZone">
+        <input
+            id="answerInput"
+            type="number"
+            inputmode="decimal"
+            autocomplete="off"
+            placeholder="your answer"
+            aria-label="Your answer"
+        >
+        <button id="checkButton">CHECK</button>
+    </div>
+
+    <!-- Primary action button -->
+    <button id="actionButton" class="action-button">NEW</button>
+
+</div>
+
+<script>
+// ─── State ───────────────────────────────────────────────────────────────────
+const state = {
+    phase:      'idle',     // 'idle' | 'answering' | 'feedback-correct' | 'feedback-wrong'
+    op:         'addition',
+    difficulty: 'easy',
+    num1:       0,
+    num2:       0,
+    correct:    0,
+    total:      0,
+    streak:     0,
+    // Pool — guarantees every problem seen once before any repeat
+    pool:       [],         // shuffled array of [num1, num2] pairs
+    poolIndex:  0,          // pointer into pool
+    lastKey:    null,       // "num1,num2" of last served problem — prevents back-to-back repeats
+};
+
+// ─── Operations map ───────────────────────────────────────────────────────────
+const ops = {
+    addition:       { symbol: '+', compute: (a, b) => a + b                           },
+    subtraction:    { symbol: '−', compute: (a, b) => a - b                           },
+    multiplication: { symbol: '×', compute: (a, b) => a * b                           },
+    division:       { symbol: '÷', compute: (a, b) => parseFloat((a / b).toFixed(2))  },
+};
+
+// ─── Difficulty ranges ────────────────────────────────────────────────────────
+const ranges = {
+    easy:   { a: [2, 12],   b: [2, 12]  },
+    medium: { a: [10, 50],  b: [2, 20]  },
+    hard:   { a: [50, 200], b: [10, 50] },
+};
+
+// ─── DOM refs ─────────────────────────────────────────────────────────────────
+const els = {
+    equation:      document.getElementById('displayNumbers'),
+    feedbackMsg:   document.getElementById('feedbackMsg'),
+    displayCard:   document.getElementById('displayCard'),
+    inputZone:     document.getElementById('inputZone'),
+    answerInput:   document.getElementById('answerInput'),
+    checkButton:   document.getElementById('checkButton'),
+    actionButton:  document.getElementById('actionButton'),
+    streakDisplay: document.getElementById('streakDisplay'),
+    scoreDisplay:  document.getElementById('scoreDisplay'),
+};
+
+// ─── Pool: build, shuffle, serve ─────────────────────────────────────────────
+
+// Fisher-Yates in-place shuffle
+function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+}
+
+// Generate every unique valid [num1, num2] pair for the current op + difficulty.
+// Division always produces whole-number quotients — no decimals at any level.
+function buildPool() {
+    const { a, b } = ranges[state.difficulty];
+    const pairs = [];
+
+    if (state.op === 'division') {
+        // Build pairs where num1 = divisor × multiplier (clean quotient guaranteed)
+        for (let divisor = b[0]; divisor <= b[1]; divisor++) {
+            const minM = Math.max(2, Math.ceil(a[0] / divisor));
+            const maxM = Math.floor(a[1] / divisor);
+            for (let m = minM; m <= maxM; m++) {
+                pairs.push([divisor * m, divisor]);
             }
-            updateDisplay();
-            functionality = !functionality;
-        };
-
-        const updateDisplay = () => {
-            if (currentPage === 'addition') {
-                document.getElementById('displayNumbers').innerText = `${num1} + ${num2}`;
-                document.getElementById('answer').innerText = show ? `ans: ${num1 + num2}` : '';
-            } else if (currentPage === 'subtraction') {
-                document.getElementById('displayNumbers').innerText = `${num1} - ${num2}`;
-                document.getElementById('answer').innerText = show ? `ans: ${num1 - num2}` : '';
-            } else if (currentPage === 'multiplication') {
-                document.getElementById('displayNumbers').innerText = `${num1} * ${num2}`;
-                document.getElementById('answer').innerText = show ? `ans: ${num1 * num2}` : '';
-            } else if (currentPage === 'division') {
-                document.getElementById('displayNumbers').innerText = `${num1} ÷ ${num2}`;
-                document.getElementById('answer').innerText = show ? `ans: ${(num1 / num2).toFixed(2)}` : '';
+        }
+    } else {
+        // Every (num1, num2) combination in range
+        for (let n1 = a[0]; n1 <= a[1]; n1++) {
+            for (let n2 = b[0]; n2 <= b[1]; n2++) {
+                pairs.push([n1, n2]);
             }
-        };
+        }
+    }
 
-        document.getElementById('additionLink').addEventListener('click', () => {
-            currentPage = 'addition';
-            setActivePage('addition');
-            updateDisplay();
-        });
+    return shuffle(pairs);
+}
 
-        document.getElementById('subtractionLink').addEventListener('click', () => {
-            currentPage = 'subtraction';
-            setActivePage('subtraction');
-            updateDisplay();
-        });
+// Rebuild and reset pool (called on op/difficulty change and on init)
+function resetPool() {
+    state.pool      = buildPool();
+    state.poolIndex = 0;
+    state.lastKey   = null;
+}
 
-        document.getElementById('multiplicationLink').addEventListener('click', () => {
-            currentPage = 'multiplication';
-            setActivePage('multiplication');
-            updateDisplay();
-        });
+// Pull the next problem from the pool.
+// When pool runs out, reshuffle — but swap the first item if it matches the
+// last problem served, so consecutive identical problems can never happen.
+function nextFromPool() {
+    if (state.poolIndex >= state.pool.length) {
+        state.pool = buildPool();
+        // Prevent the reshuffle from starting with the same problem that just ended
+        if (state.pool.length > 1 && state.pool[0].join() === state.lastKey) {
+            [state.pool[0], state.pool[1]] = [state.pool[1], state.pool[0]];
+        }
+        state.poolIndex = 0;
+    }
+    const pair = state.pool[state.poolIndex++];
+    state.lastKey = pair.join();
+    return pair;
+}
 
-        document.getElementById('divisionLink').addEventListener('click', () => {
-            currentPage = 'division';
-            setActivePage('division');
-            updateDisplay();
-        });
+// ─── Answer helpers ───────────────────────────────────────────────────────────
+function correctAnswer() {
+    return ops[state.op].compute(state.num1, state.num2);
+}
 
-        const setActivePage = (page) => {
-            document.querySelectorAll('nav ul li a').forEach(link => {
-                link.classList.remove('active');
-            });
-            document.getElementById(`${page}Link`).classList.add('active');
-        };
+// ─── Render ───────────────────────────────────────────────────────────────────
+function render() {
+    const op = ops[state.op];
 
-        document.getElementById('actionButton').addEventListener('click', handleClick);
+    // Equation
+    if (state.phase === 'idle') {
+        els.equation.textContent = '? ○ ?';
+        els.equation.className   = 'equation idle';
+    } else {
+        els.equation.textContent = `${state.num1} ${op.symbol} ${state.num2}`;
+        els.equation.className   = 'equation';
+    }
 
-        updateDisplay();
-    </script>
+    // Input zone
+    els.inputZone.classList.toggle('visible', state.phase === 'answering');
+
+    // Card border state
+    els.displayCard.className = 'display-card';
+    if (state.phase === 'feedback-correct') els.displayCard.classList.add('correct');
+    if (state.phase === 'feedback-wrong')   els.displayCard.classList.add('wrong');
+
+    // Feedback message
+    const msgMap = {
+        'idle':             ['press NEW to start', 'hint'],
+        'answering':        ['', ''],
+        'feedback-correct': ['✓  correct!',        'correct'],
+        'feedback-wrong':   [`✗  answer: ${correctAnswer()}`, 'wrong'],
+    };
+    const [msg, cls] = msgMap[state.phase] || ['', ''];
+    els.feedbackMsg.textContent = msg;
+    els.feedbackMsg.className   = cls ? `feedback-msg ${cls}` : 'feedback-msg';
+
+    // Action button label + style
+    const inFeedback = state.phase === 'feedback-correct' || state.phase === 'feedback-wrong';
+    els.actionButton.textContent = inFeedback ? 'NEXT' : 'NEW';
+    els.actionButton.className   = inFeedback ? 'action-button ready' : 'action-button';
+
+    // Stats — show pool progress alongside correct/total
+    const streak     = state.streak;
+    const poolRemain = state.pool.length - state.poolIndex;
+    els.streakDisplay.textContent = `🔥 ${streak} streak`;
+    els.streakDisplay.className   = streak >= 5 ? 'streak-display hot' : 'streak-display';
+    els.scoreDisplay.textContent  = `${state.correct} / ${state.total}  ·  ${poolRemain} left`;
+}
+
+// ─── Actions ─────────────────────────────────────────────────────────────────
+function startNewProblem() {
+    const [n1, n2] = nextFromPool();
+    state.num1  = n1;
+    state.num2  = n2;
+    state.phase = 'answering';
+    els.answerInput.value = '';
+    render();
+    requestAnimationFrame(() => els.answerInput.focus());
+}
+
+function checkAnswer() {
+    const raw = els.answerInput.value.trim();
+    if (!raw) return;
+
+    const userVal   = parseFloat(raw);
+    const answerVal = correctAnswer();
+    const isCorrect = Math.abs(userVal - answerVal) < 0.01;
+
+    state.total++;
+    if (isCorrect) {
+        state.correct++;
+        state.streak++;
+        state.phase = 'feedback-correct';
+    } else {
+        state.streak = 0;
+        state.phase  = 'feedback-wrong';
+    }
+
+    render();
+
+    // Auto-advance after 1.4 s
+    setTimeout(() => {
+        if (state.phase !== 'idle') startNewProblem();
+    }, 1400);
+}
+
+function handleActionButton() {
+    if (state.phase !== 'answering') startNewProblem();
+}
+
+// ─── Event listeners ─────────────────────────────────────────────────────────
+
+// Operation tabs — one loop
+Object.keys(ops).forEach(opKey => {
+    document.getElementById(`${opKey}Link`).addEventListener('click', () => {
+        if (state.op === opKey) return;                          // no-op if already active
+        state.op    = opKey;
+        state.phase = 'idle';
+        resetPool();
+        document.querySelectorAll('nav ul li a').forEach(a => a.classList.remove('active'));
+        document.getElementById(`${opKey}Link`).classList.add('active');
+        render();
+    });
+});
+
+// Difficulty buttons — one loop
+document.querySelectorAll('.diff-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        if (state.difficulty === btn.dataset.diff) return;       // no-op if already active
+        document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        state.difficulty = btn.dataset.diff;
+        state.phase      = 'idle';
+        resetPool();
+        render();
+    });
+});
+
+els.checkButton.addEventListener('click', checkAnswer);
+els.answerInput.addEventListener('keydown', e => { if (e.key === 'Enter') checkAnswer(); });
+els.actionButton.addEventListener('click',  handleActionButton);
+els.actionButton.addEventListener('keydown', e => {
+    if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); handleActionButton(); }
+});
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+resetPool();
+render();
+</script>
 </body>
 </html>
